@@ -302,6 +302,7 @@
 
   <script>
     let gameInstance = null;
+    let gameOverShown = false;
     const instructionsModal = document.getElementById('instructions-modal');
     const gameoverModal = document.getElementById('gameover-modal');
     const startBtn = document.getElementById('start-btn');
@@ -311,21 +312,31 @@
     function initGame() {
       const canvas = document.getElementById('tetris-canvas');
 
+      // Reset flag for new game
+      gameOverShown = false;
+
       // Destroy previous game instance if exists
       if (gameInstance) {
         gameInstance.quit();
+        gameInstance = null;
       }
 
-      gameInstance = new ClassicTetris(canvas);
-      window.tetris = gameInstance;
+      // Small delay to ensure clean state
+      setTimeout(() => {
+        gameInstance = new ClassicTetris(canvas);
+        window.tetris = gameInstance;
 
-      // Wire up game-over event
-      gameInstance.on(ClassicTetris.GAME_OVER_END, (data) => {
-        showGameOverModal(data);
-      });
+        // Wire up game-over event - only show once per game
+        gameInstance.on(ClassicTetris.GAME_OVER_END, (data) => {
+          if (!gameOverShown) {
+            gameOverShown = true;
+            showGameOverModal(data);
+          }
+        });
 
-      // Start the game
-      gameInstance.togglePlayPause();
+        // Start the game
+        gameInstance.togglePlayPause();
+      }, 50);
     }
 
     function showGameOverModal(data) {
