@@ -1,0 +1,6 @@
+{
+  "buildCommand": "true",
+  "installCommand": "true",
+  "framework": null,
+  "public": true
+}

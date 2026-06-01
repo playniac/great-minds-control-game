@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tetris - Gaming Study</title>
+  <script src='classic-tetris.js'></script>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background-color: #000;
+      color: #fff;
+      font-family: Georgia, serif;
+      font-size: 17px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 20px;
+      user-select: none;
+    }
+
+    .game-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 20px;
+    }
+
+    .instructions {
+      text-align: center;
+      color: #aaa;
+      font-size: 14px;
+      margin-bottom: 10px;
+    }
+
+    #tetris-canvas {
+      border: 2px solid #fff;
+      display: block;
+      background: #000;
+      image-rendering: pixelated;
+      image-rendering: crisp-edges;
+    }
+
+    .controls {
+      display: flex;
+      gap: 15px;
+      align-items: center;
+      padding: 0 30px 15px;
+    }
+
+    .control-group {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+
+    label {
+      font-size: 14px;
+      color: #ccc;
+    }
+
+    input[type='number'] {
+      width: 50px;
+      padding: 6px;
+      background: #222;
+      color: #fff;
+      border: 1px solid #444;
+      border-radius: 3px;
+      font-family: monospace;
+      font-size: 14px;
+    }
+
+    input[type='number']:focus {
+      outline: none;
+      border-color: #4CAF50;
+    }
+
+    button {
+      padding: 8px 16px;
+      background: #4CAF50;
+      color: #000;
+      border: none;
+      border-radius: 3px;
+      font-weight: bold;
+      cursor: pointer;
+      font-size: 14px;
+      transition: background 0.2s;
+    }
+
+    button:hover {
+      background: #45a049;
+    }
+
+    button:active {
+      background: #3d8b40;
+    }
+
+    @media (max-width: 600px) {
+      body {
+        padding: 10px;
+      }
+
+      #tetris-canvas {
+        width: 260px !important;
+        height: 300px !important;
+        border-width: 1px;
+      }
+
+      .controls {
+        flex-wrap: wrap;
+        padding: 0 10px 10px;
+        gap: 8px;
+      }
+
+      button {
+        padding: 6px 12px;
+        font-size: 12px;
+      }
+    }
+  </style>
+  <script>
+  window.addEventListener('load', event => {
+    const canvas = document.getElementById('tetris-canvas');
+    const tetris = new ClassicTetris(canvas);
+
+    // Store reference for session.js
+    window.tetris = tetris;
+
+    document.getElementById('start-stop-btn').addEventListener('click', event => {
+      const startLevel = document.getElementById('level-input').value;
+      tetris.setStartLevel(startLevel);
+      tetris.togglePlayPause();
+    });
+    document.getElementById('quit-btn').addEventListener('click', event => {
+      tetris.quit();
+    });
+  });
+  </script>
+  <script src='session.js'></script>
+</head>
+<body>
+  <div class="game-container">
+    <div class="instructions">
+      Play for 45 minutes. You'll be automatically redirected when the session is complete.
+    </div>
+    <canvas id='tetris-canvas' width='520' height='600'></canvas>
+    <div class="controls">
+      <div class="control-group">
+        <label for='level-input'>Start Level:</label>
+        <input id='level-input' name='level-input' type='number' min='0' max='19' value='5'></input>
+      </div>
+      <button id='start-stop-btn'>Play / Pause</button>
+      <button id='quit-btn'>Quit Game</button>
+    </div>
+  </div>
+</body>
+</html>
