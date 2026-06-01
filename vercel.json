@@ -2,5 +2,6 @@
   "buildCommand": "true",
   "installCommand": "true",
   "framework": null,
+  "outputDirectory": ".",
   "public": true
 }
