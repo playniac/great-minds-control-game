@@ -40,6 +40,34 @@
       font-size: 14px;
     }
 
+    .stats-bar {
+      display: flex;
+      gap: 30px;
+      justify-content: center;
+      font-size: 16px;
+      font-family: monospace;
+      color: #4CAF50;
+    }
+
+    .stat-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .stat-label {
+      font-size: 12px;
+      color: #999;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .stat-value {
+      font-size: 20px;
+      font-weight: bold;
+    }
+
     .top-bar {
       display: flex;
       justify-content: center;
@@ -48,9 +76,12 @@
       position: relative;
     }
 
-    .info-button {
-      position: absolute;
-      right: 0;
+    .button-group {
+      display: flex;
+      gap: 8px;
+    }
+
+    .info-button, .pause-button {
       width: 36px;
       height: 36px;
       border-radius: 50%;
@@ -66,8 +97,12 @@
       transition: background 0.2s;
     }
 
-    .info-button:hover {
+    .info-button:hover, .pause-button:hover {
       background: #45a049;
+    }
+
+    .info-button:active, .pause-button:active {
+      background: #3d8b40;
     }
 
     #tetris-canvas {
@@ -76,6 +111,7 @@
       background: #000;
       image-rendering: pixelated;
       image-rendering: crisp-edges;
+      cursor: pointer;
     }
 
     /* Modal Styles */
@@ -174,13 +210,13 @@
     }
 
     .close-button {
-      padding: 8px 20px;
-      font-size: 14px;
-      background: #555;
+      padding: 12px 30px;
+      font-size: 16px;
+      background: #4CAF50;
     }
 
     .close-button:hover {
-      background: #666;
+      background: #45a049;
     }
 
     @keyframes fadeIn {
@@ -208,6 +244,15 @@
         width: 260px !important;
         height: 300px !important;
         border-width: 1px;
+      }
+
+      .stats-bar {
+        gap: 20px;
+        font-size: 14px;
+      }
+
+      .stat-value {
+        font-size: 16px;
       }
 
       .modal-content {
@@ -244,8 +289,30 @@
       Play for 45 minutes. You'll be automatically redirected when the session is complete.
     </div>
 
+    <div class="stats-bar">
+      <div class="stat-item">
+        <div class="stat-label">Score</div>
+        <div class="stat-value" id="current-score">0</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-label">High Score</div>
+        <div class="stat-value" id="high-score">0</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-label">Level</div>
+        <div class="stat-value" id="current-level">1</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-label">Lines</div>
+        <div class="stat-value" id="current-lines">0</div>
+      </div>
+    </div>
+
     <div class="top-bar">
-      <button class="info-button" id="info-btn" title="Controls">ⓘ</button>
+      <div class="button-group">
+        <button class="pause-button" id="pause-btn" title="Pause/Resume">⏸</button>
+        <button class="info-button" id="info-btn" title="Instructions">ⓘ</button>
+      </div>
     </div>
 
     <canvas id='tetris-canvas' width='520' height='600'></canvas>
@@ -255,6 +322,11 @@
   <div id="instructions-modal" class="modal active">
     <div class="modal-content">
       <h1>Tetris</h1>
+
+      <h2>Objective</h2>
+      <div class="controls-list">
+        <p>You have <strong id="duration-mins">45</strong> mins to get the best high score. Clear lines by filling them completely.</p>
+      </div>
 
       <h2>Keyboard Controls</h2>
       <div class="controls-list">
@@ -266,19 +338,13 @@
         <p><strong>P</strong> Pause/Resume</p>
       </div>
 
-      <h2>Mouse/Touch Controls</h2>
+      <h2>Mouse Controls (Simplified)</h2>
       <div class="controls-list">
         <p><strong>Left Click</strong> Move left</p>
         <p><strong>Right Click</strong> Move right</p>
-        <p><strong>Down Drag</strong> Soft drop</p>
-        <p><strong>Left Drag</strong> Rotate counter-clockwise</p>
-        <p><strong>Right Drag</strong> Rotate clockwise</p>
-        <p><strong>Center Drag Up</strong> Hard drop</p>
-      </div>
-
-      <h2>Game Goal</h2>
-      <div class="controls-list">
-        <p>Clear horizontal lines by filling them completely. Each line cleared scores points and increases your level.</p>
+        <p><strong>Middle Click</strong> Hard drop</p>
+        <p><strong>Middle Mouse Wheel Up</strong> Rotate clockwise</p>
+        <p><strong>Middle Mouse Wheel Down</strong> Rotate counter-clockwise</p>
       </div>
 
       <div class="modal-buttons">
@@ -301,23 +367,37 @@
     </div>
   </div>
 
+  <script src='config.js'></script>
   <script>
     let gameInstance = null;
     let gameOverShown = false;
     let gameStarted = false;
+    let isPaused = false;
+    let sessionHighScore = 0;
+
     const instructionsModal = document.getElementById('instructions-modal');
     const gameoverModal = document.getElementById('gameover-modal');
     const startBtn = document.getElementById('start-btn');
     const closeInstructionsBtn = document.getElementById('close-instructions-btn');
     const playAgainBtn = document.getElementById('play-again-btn');
     const infoBtn = document.getElementById('info-btn');
+    const pauseBtn = document.getElementById('pause-btn');
+    const durationMinsEl = document.getElementById('duration-mins');
+
+    // Update duration in instructions based on config
+    function updateDurationDisplay() {
+      const durationMins = Math.round((window.CONFIG?.sessionDuration || 2700) / 60);
+      durationMinsEl.textContent = durationMins;
+    }
 
     function initGame() {
       const canvas = document.getElementById('tetris-canvas');
 
-      // Reset flag for new game
+      // Reset flags for new game
       gameOverShown = false;
       gameStarted = true;
+      isPaused = false;
+      updatePauseButton();
 
       // Destroy previous game instance if exists
       if (gameInstance) {
@@ -330,7 +410,23 @@
         gameInstance = new ClassicTetris(canvas);
         window.tetris = gameInstance;
 
-        // Wire up game-over event - only show once per game
+        // Wire up game events
+        gameInstance.on(ClassicTetris.SCORE_CHANGE, (data) => {
+          updateScoreDisplay(data.score);
+          if (data.score > sessionHighScore) {
+            sessionHighScore = data.score;
+            updateHighScoreDisplay(sessionHighScore);
+          }
+        });
+
+        gameInstance.on(ClassicTetris.LEVEL_CHANGE, (data) => {
+          updateLevelDisplay(data.level);
+        });
+
+        gameInstance.on(ClassicTetris.LINE_CLEAR, (data) => {
+          updateLinesDisplay(data.lines);
+        });
+
         gameInstance.on(ClassicTetris.GAME_OVER_END, (data) => {
           if (!gameOverShown) {
             gameOverShown = true;
@@ -338,10 +434,40 @@
           }
         });
 
+        gameInstance.on(ClassicTetris.GAME_PAUSE, () => {
+          isPaused = true;
+          updatePauseButton();
+        });
+
+        gameInstance.on(ClassicTetris.GAME_RESUME, () => {
+          isPaused = false;
+          updatePauseButton();
+        });
+
         // Start the game
         gameInstance.togglePlayPause();
         updateInstructionsButtons();
       }, 50);
+    }
+
+    function updateScoreDisplay(score) {
+      document.getElementById('current-score').textContent = score;
+    }
+
+    function updateHighScoreDisplay(score) {
+      document.getElementById('high-score').textContent = score;
+    }
+
+    function updateLevelDisplay(level) {
+      document.getElementById('current-level').textContent = level;
+    }
+
+    function updateLinesDisplay(lines) {
+      document.getElementById('current-lines').textContent = lines;
+    }
+
+    function updatePauseButton() {
+      pauseBtn.textContent = isPaused ? '▶' : '⏸';
     }
 
     function updateInstructionsButtons() {
@@ -394,15 +520,27 @@
       showInstructions();
     });
 
-    // Keyboard shortcut: I to open instructions
-    document.addEventListener('keydown', (e) => {
-      if (e.key.toLowerCase() === 'i') {
-        showInstructions();
+    pauseBtn.addEventListener('click', () => {
+      if (gameInstance && gameStarted) {
+        gameInstance.togglePlayPause();
       }
     });
+
+    // Keyboard shortcuts
+    document.addEventListener('keydown', (e) => {
+      // ESC to close instructions
+      if (e.key === 'Escape') {
+        hideInstructions();
+        e.preventDefault();
+      }
+      // P to pause (handled by Tetris game)
+      // Note: I key is NOT used to avoid conflicts with hard-drop
+    });
+
+    // Initialize on page load
+    updateDurationDisplay();
   </script>
 
-  <script src='config.js'></script>
   <script src='session.js'></script>
 </body>
 </html>
