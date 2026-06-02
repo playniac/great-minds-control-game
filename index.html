@@ -283,6 +283,7 @@
 
       <div class="modal-buttons">
         <button id="start-btn">START</button>
+        <button id="close-instructions-btn" style="display: none;" class="close-button">CLOSE</button>
       </div>
     </div>
   </div>
@@ -303,9 +304,11 @@
   <script>
     let gameInstance = null;
     let gameOverShown = false;
+    let gameStarted = false;
     const instructionsModal = document.getElementById('instructions-modal');
     const gameoverModal = document.getElementById('gameover-modal');
     const startBtn = document.getElementById('start-btn');
+    const closeInstructionsBtn = document.getElementById('close-instructions-btn');
     const playAgainBtn = document.getElementById('play-again-btn');
     const infoBtn = document.getElementById('info-btn');
 
@@ -314,6 +317,7 @@
 
       // Reset flag for new game
       gameOverShown = false;
+      gameStarted = true;
 
       // Destroy previous game instance if exists
       if (gameInstance) {
@@ -336,7 +340,18 @@
 
         // Start the game
         gameInstance.togglePlayPause();
+        updateInstructionsButtons();
       }, 50);
+    }
+
+    function updateInstructionsButtons() {
+      if (gameStarted) {
+        startBtn.style.display = 'none';
+        closeInstructionsBtn.style.display = 'block';
+      } else {
+        startBtn.style.display = 'block';
+        closeInstructionsBtn.style.display = 'none';
+      }
     }
 
     function showGameOverModal(data) {
@@ -352,6 +367,7 @@
 
     function showInstructions() {
       instructionsModal.classList.add('active');
+      updateInstructionsButtons();
     }
 
     function hideInstructions() {
@@ -364,8 +380,13 @@
       initGame();
     });
 
+    closeInstructionsBtn.addEventListener('click', () => {
+      hideInstructions();
+    });
+
     playAgainBtn.addEventListener('click', () => {
       closeGameOverModal();
+      gameStarted = false;
       initGame();
     });
 
