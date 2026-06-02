@@ -1,12 +1,18 @@
 // Prolific session timer for control game
 (function() {
-  // Parse URL parameters
+  // Parse URL parameters (only Prolific IDs come from URL)
   const params = new URLSearchParams(window.location.search);
-  const durationSeconds = parseInt(params.get('duration')) || 2700; // default 45 minutes
-  const prolificUrl = params.get('prolific_url');
   const prolificPid = params.get('PROLIFIC_PID');
   const studyId = params.get('STUDY_ID');
   const sessionId = params.get('SESSION_ID');
+
+  // Get Prolific URL and duration from config.js (or fallback to URL params for testing)
+  // window.CONFIG should be set by config.js
+  const durationSeconds = (window.CONFIG && window.CONFIG.sessionDuration) ||
+                          parseInt(params.get('duration')) ||
+                          2700; // default 45 minutes
+  const prolificUrl = (window.CONFIG && window.CONFIG.prolificUrl) ||
+                      params.get('prolific_url');
 
   let gameInstance = null;
   let sessionEnded = false;
